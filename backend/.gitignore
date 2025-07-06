@@ -1,0 +1,15 @@
+# Environment files
+.env
+# Compiled binary files
+*.exe
+*.out
+*.test
+
+# Build directory (if you ever use it)
+bin/
+
+# OS / editor-specific files
+.DS_Store
+.idea/
+.vscode/
+*.swp
