@@ -9,6 +9,7 @@ import (
 func main() {
 	// 1. Load environment variables from .env
 	LoadEnv()
+	InitDB()
 	//2. Print a confirmation
 	fmt.Println("Config loaded. Running server on port:", AppConfig.Port)
 	// 3. start Gin server
