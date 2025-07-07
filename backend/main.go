@@ -13,6 +13,20 @@ func main() {
 	LoadEnv()
 	InitDB()
 
+	/* TEMPORARY TEST CALL:
+	fmt.Println("Crawling ....")
+	analyzed, err := crawlURL("https://gitashreemahato.github.io/portfolio-website/work.html")
+	if err != nil {
+		fmt.Println("Crawl failed:", err)
+	} else {
+		fmt.Println("Crawl successful:")
+		fmt.Printf("Title: %s\n", analyzed.Title)
+		fmt.Printf("HTML Version: %s\n", analyzed.HTMLVersion)
+		fmt.Printf("H1: %d H2: %d H3: %d H4: %d H5: %d H6: %d\n",
+			analyzed.H1Count, analyzed.H2Count, analyzed.H3Count,
+			analyzed.H4Count, analyzed.H5Count, analyzed.H6Count)
+	} */
+
 	//2. Print a confirmation
 	fmt.Println("Config loaded. Running server on port:", AppConfig.Port)
 	// 3. start Gin server
