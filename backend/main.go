@@ -21,6 +21,7 @@ func main() {
 	router.POST("/urls", CreateUrl)
 	router.GET("/urls", GetAllUrls)
 	router.GET("/urls/:id", GetUrlById)
+	router.PUT("/urls/:id", RequeueUrlByID)
 	router.DELETE("/urls", DeleteUrlsBulk)
 	router.DELETE("/urls/:id", DeleteUrlById)
 
@@ -114,5 +115,29 @@ func DeleteUrlsBulk(c *gin.Context) {
 		"message":       "URLs deleted successfully",
 		"rows_affected": result.RowsAffected,
 		"deleted_ids":   ids,
+	})
+}
+
+// re-run a URL analysis
+func RequeueUrlByID(c *gin.Context) {
+	id := c.Param("id")
+	var url Url
+
+	// Find the URL by ID
+	if err := DB.First(&url, id).Error; err != nil {
+		c.JSON(404, gin.H{"error": "URL not found"})
+		return
+	}
+
+	// Update the status
+	url.Status = "queued"
+	if err := DB.Save(&url).Error; err != nil {
+		c.JSON(500, gin.H{"error": "Failed to update status"})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"message": "URL status reset to 'queued'",
+		"url":     url,
 	})
 }
