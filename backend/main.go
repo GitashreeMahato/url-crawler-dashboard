@@ -1,6 +1,10 @@
 package main
 
 import (
+	"net/http"
+
+	"github.com/PuerkitoBio/goquery"
+
 	"fmt"
 
 	"github.com/gin-gonic/gin"
@@ -27,6 +31,40 @@ func main() {
 
 	// 4. Use port from config
 	router.Run(":" + AppConfig.Port)
+}
+
+// crawlURL fetches and analyzes a webpage
+func crawlURL(target string) (Url, error) {
+	var result Url
+	result.Url = target
+
+	// 1. Fetch page
+	resp, err := http.Get(target)
+	if err != nil {
+		result.Status = "error"
+		return result, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		result.Status = "error"
+		return result, nil
+	}
+
+	// 2. Parse HTML with goquery
+	doc, err := goquery.NewDocumentFromReader(resp.Body)
+	// result.Title= doc.Find("title").Text()
+	if err != nil {
+		result.Status = "error"
+		return result, err
+	}
+	_ = doc // prevents unused error
+
+	result.Status = "done"
+
+	// Continue to next step to extract fields...
+
+	return result, nil
 }
 
 // create urls
