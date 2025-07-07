@@ -1,12 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/PuerkitoBio/goquery"
-
-	"fmt"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,6 +12,7 @@ func main() {
 	// 1. Load environment variables from .env
 	LoadEnv()
 	InitDB()
+
 	//2. Print a confirmation
 	fmt.Println("Config loaded. Running server on port:", AppConfig.Port)
 	// 3. start Gin server
@@ -47,22 +46,39 @@ func crawlURL(target string) (Url, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
+		fmt.Println("Received error status:", resp.Status)
 		result.Status = "error"
 		return result, nil
 	}
 
 	// 2. Parse HTML with goquery
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
-	// result.Title= doc.Find("title").Text()
+
 	if err != nil {
 		result.Status = "error"
 		return result, err
 	}
-	_ = doc // prevents unused error
+	result.Title = doc.Find("title").Text()
 
 	result.Status = "done"
 
-	// Continue to next step to extract fields...
+	doc.Find("*").EachWithBreak(func(i int, s *goquery.Selection) bool {
+		if goquery.NodeName(s) == "html" {
+			if s.Nodes[0].Namespace == "" {
+				result.HTMLVersion = "HTML5"
+			} else {
+				result.HTMLVersion = "Unknown"
+			}
+			return false
+		}
+		return true
+	})
+	result.H1Count = doc.Find("h1").Length()
+	result.H2Count = doc.Find("h2").Length()
+	result.H3Count = doc.Find("h3").Length()
+	result.H4Count = doc.Find("h4").Length()
+	result.H5Count = doc.Find("h5").Length()
+	result.H6Count = doc.Find("h6").Length()
 
 	return result, nil
 }
