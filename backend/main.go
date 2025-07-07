@@ -20,6 +20,7 @@ func main() {
 	})
 	router.POST("/urls", CreateUrl)
 	router.GET("/urls", GetAllUrls)
+	router.GET("/urls/:id", GetUrlById)
 	// 4. Use port from config
 	router.Run(":" + AppConfig.Port)
 }
@@ -55,4 +56,14 @@ func GetAllUrls(c *gin.Context) {
 	}
 
 	c.JSON(200, urls)
+}
+
+func GetUrlById(c *gin.Context) {
+	var url Url
+	id := c.Param("id")
+	if err := DB.First(&url, id).Error; err != nil {
+		c.JSON(404, gin.H{"error": "URL not found"})
+		return
+	}
+	c.JSON(200, url)
 }
