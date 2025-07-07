@@ -21,7 +21,9 @@ func main() {
 	router.POST("/urls", CreateUrl)
 	router.GET("/urls", GetAllUrls)
 	router.GET("/urls/:id", GetUrlById)
+	router.DELETE("/urls", DeleteUrlsBulk)
 	router.DELETE("/urls/:id", DeleteUrlById)
+
 	// 4. Use port from config
 	router.Run(":" + AppConfig.Port)
 }
@@ -85,4 +87,32 @@ func DeleteUrlById(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{"message": "URL deleted successfully"})
+}
+
+// delete all urls
+func DeleteUrlsBulk(c *gin.Context) {
+	var ids []uint
+
+	if err := c.ShouldBindJSON(&ids); err != nil {
+		c.JSON(400, gin.H{"error": "Invalid request body. Expected array of IDs."})
+		return
+	}
+
+	if len(ids) == 0 {
+		c.JSON(400, gin.H{"error": "No IDs provided"})
+		return
+	}
+
+	result := DB.Delete(&Url{}, ids)
+
+	if result.Error != nil {
+		c.JSON(500, gin.H{"error": "Failed to delete URLs"})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"message":       "URLs deleted successfully",
+		"rows_affected": result.RowsAffected,
+		"deleted_ids":   ids,
+	})
 }
