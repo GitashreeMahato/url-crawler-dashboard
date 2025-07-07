@@ -21,6 +21,7 @@ func main() {
 	router.POST("/urls", CreateUrl)
 	router.GET("/urls", GetAllUrls)
 	router.GET("/urls/:id", GetUrlById)
+	router.DELETE("/urls/:id", DeleteUrlById)
 	// 4. Use port from config
 	router.Run(":" + AppConfig.Port)
 }
@@ -58,6 +59,7 @@ func GetAllUrls(c *gin.Context) {
 	c.JSON(200, urls)
 }
 
+// get url by id
 func GetUrlById(c *gin.Context) {
 	var url Url
 	id := c.Param("id")
@@ -66,4 +68,21 @@ func GetUrlById(c *gin.Context) {
 		return
 	}
 	c.JSON(200, url)
+}
+
+// delete a URL by ID
+func DeleteUrlById(c *gin.Context) {
+	id := c.Param("id")
+	result := DB.Delete(&Url{}, id)
+	if result.RowsAffected == 0 {
+		c.JSON(404, gin.H{"error": "URL not found"})
+		return
+	}
+
+	if result.Error != nil {
+		c.JSON(500, gin.H{"error": "Failed to delete URL"})
+		return
+	}
+
+	c.JSON(200, gin.H{"message": "URL deleted successfully"})
 }
