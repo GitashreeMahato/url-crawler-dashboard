@@ -19,9 +19,12 @@ func main() {
 		c.JSON(200, gin.H{"message": "pong"})
 	})
 	router.POST("/urls", CreateUrl)
+	router.GET("/urls", GetAllUrls)
 	// 4. Use port from config
 	router.Run(":" + AppConfig.Port)
 }
+
+// create urls
 func CreateUrl(c *gin.Context) {
 	var newUrl Url
 
@@ -40,4 +43,16 @@ func CreateUrl(c *gin.Context) {
 	}
 
 	c.JSON(201, newUrl)
+}
+
+// get urls
+func GetAllUrls(c *gin.Context) {
+	var urls []Url
+
+	if err := DB.Find(&urls).Error; err != nil {
+		c.JSON(500, gin.H{"error": "Failed to fetch URLs"})
+		return
+	}
+
+	c.JSON(200, urls)
 }
