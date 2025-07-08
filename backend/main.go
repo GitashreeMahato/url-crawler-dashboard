@@ -122,6 +122,14 @@ func crawlURL(target string) (Url, error) {
 				brokenCount++
 			}
 		}(href)
+
+		// Detect if login form exists
+		if doc.Find(`input[type="password"]`).Length() > 0 {
+			result.LoginFormDetected = true
+		} else {
+			result.LoginFormDetected = false
+		}
+
 	})
 
 	result.H1Count = doc.Find("h1").Length()
@@ -134,6 +142,8 @@ func crawlURL(target string) (Url, error) {
 	result.InternalLinks = internalCount
 	result.ExternalLinks = externalCount
 	result.BrokenLinks = brokenCount
+
+	result.LoginFormDetected = true
 
 	fmt.Println("Link Analysis:")
 	fmt.Println("Internal Links:", result.InternalLinks)
