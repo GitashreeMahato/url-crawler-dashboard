@@ -1,5 +1,5 @@
 import  { useEffect, useMemo, useState } from 'react';
-
+import ReactModal from 'react-modal';
 import axios from 'axios';
 import {
   useReactTable,
@@ -16,10 +16,12 @@ interface UrlItem {
   ID: number;
   Url: string;
   Title: string;
+    HTMLVersion: string;
   Status: string;
   InternalLinks: number;
   ExternalLinks: number;
   BrokenLinks: number;
+    LoginFormDetected: boolean;
 }
 // Utility to truncate long URLs for better readability
 const truncateUrl = (url: string, maxLength = 60) => {
@@ -47,6 +49,8 @@ const UrlTable = () => {
   const [data, setData] = useState<UrlItem[]>([]);
   const [globalFilter, setGlobalFilter] = useState('');
   const [loading, setLoading] = useState(true);
+  const [selectedUrl, setSelectedUrl] = useState<UrlItem | null>(null);
+
 
   // Fetch data from backend API
   useEffect(() => {
@@ -64,6 +68,8 @@ const UrlTable = () => {
         header: 'Title',
         accessorKey: 'Title',
       },
+          { header: 'HTML Version', accessorKey: 'HTMLVersion' },
+
       {
         header: 'URL',
         accessorKey: 'Url',
@@ -121,7 +127,7 @@ const UrlTable = () => {
         </thead>
         <tbody>
           {table.getRowModel().rows.map((row) => (
-            <tr key={row.id}>
+        <tr key={row.id} onClick={() => setSelectedUrl(row.original)} style={{ cursor: 'pointer' }}>
               {row.getVisibleCells().map((cell) => (
                 <td key={cell.id}>
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -131,6 +137,38 @@ const UrlTable = () => {
           ))}
         </tbody>
       </table>
+
+      {/* Modal for URL Details */}
+<ReactModal
+  isOpen={!!selectedUrl}
+  onRequestClose={() => setSelectedUrl(null)}
+  contentLabel="URL Details"
+  ariaHideApp={false}
+  style={{
+    content: {
+      maxWidth: '500px',
+      margin: 'auto',
+      padding: '20px',
+    },
+  }}
+>
+  {selectedUrl && (
+    <div>
+      <h2>URL Details</h2>
+      <p><strong>Title:</strong> {selectedUrl.Title}</p>
+      <p><strong>URL:</strong> {selectedUrl.Url}</p>
+            <p><strong>HTML Version:</strong> {selectedUrl.HTMLVersion}</p>
+      <p><strong>Status:</strong> {selectedUrl.Status}</p>
+      <p><strong>Internal Links:</strong> {selectedUrl.InternalLinks}</p>
+      <p><strong>External Links:</strong> {selectedUrl.ExternalLinks}</p>
+      <p><strong>Broken Links:</strong> {selectedUrl.BrokenLinks}</p>
+            <p><strong>Login Form Detected:</strong> {selectedUrl.LoginFormDetected ? 'Yes' : 'No'}</p>
+      <button onClick={() => setSelectedUrl(null)} style={{ marginTop: 10 }}>
+        Close
+      </button>
+    </div>
+  )}
+</ReactModal>
 
       <div style={{ marginTop: 10 }}>
         <button onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
