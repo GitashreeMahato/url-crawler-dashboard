@@ -1,13 +1,15 @@
 package main
 
 import (
+	"github.com/PuerkitoBio/goquery"
+	"github.com/gin-contrib/cors"
+
+	"github.com/gin-gonic/gin"
+
 	"fmt"
 	"net/http"
-
 	"strings"
-
-	"github.com/PuerkitoBio/goquery"
-	"github.com/gin-gonic/gin"
+	"time"
 )
 
 func main() {
@@ -33,6 +35,15 @@ func main() {
 	fmt.Println("Config loaded. Running server on port:", AppConfig.Port)
 	// 3. start Gin server
 	router := gin.Default()
+
+	// cors
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
+		AllowHeaders:     []string{"Origin", "Content-Type"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 
 	router.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "pong"})
