@@ -11,6 +11,11 @@ import (
 
 var DB *gorm.DB
 
+type BrokenLink struct {
+	URL    string `json:"url"`
+	Status int    `json:"status"`
+}
+
 // Url represents the crawled page structure
 type Url struct {
 	ID                uint   `gorm:"primaryKey"`
@@ -25,9 +30,10 @@ type Url struct {
 	H6Count           int
 	InternalLinks     int
 	ExternalLinks     int
-	BrokenLinks       int
+	BrokenLinksCount  int `json:"BrokenLinksCount"` // Number of broken links (for table)
 	LoginFormDetected bool
-	Status            string `gorm:"type:enum('queued','running','done','error');default:'queued'"`
+	Status            string       `gorm:"type:enum('queued','running','done','error');default:'queued'"`
+	BrokenLinks       []BrokenLink `gorm:"-" json:"BrokenLinks"` //List of broken links with status codes (not saved in DB)
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
 }

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -63,6 +64,9 @@ func main() {
 func crawlURL(target string) (Url, error) {
 	var result Url
 	result.Url = target
+	var brokenLinks []BrokenLink
+	brokenLock := sync.Mutex{}
+	var wg sync.WaitGroup
 
 	// 1. Fetch page
 	resp, err := http.Get(target)
@@ -103,7 +107,6 @@ func crawlURL(target string) (Url, error) {
 	// Step: Analyze links
 	internalCount := 0
 	externalCount := 0
-	brokenCount := 0
 
 	doc.Find("a[href]").Each(func(i int, s *goquery.Selection) {
 		href, exists := s.Attr("href")
@@ -126,11 +129,24 @@ func crawlURL(target string) (Url, error) {
 			externalCount++
 		}
 
-		// Check if link is broken (HEAD is faster)
+		// Check if link is broken
+		wg.Add(1)
 		go func(link string) {
+			defer wg.Done()
 			resp, err := http.Head(link)
-			if err != nil || resp.StatusCode >= 400 {
-				brokenCount++
+			status := 0
+			if err != nil {
+				status = 0 // failed to connect
+			} else {
+				status = resp.StatusCode
+			}
+			if err != nil || status >= 400 {
+				brokenLock.Lock()
+				brokenLinks = append(brokenLinks, BrokenLink{
+					URL:    link,
+					Status: status,
+				})
+				brokenLock.Unlock()
 			}
 		}(href)
 
@@ -142,7 +158,7 @@ func crawlURL(target string) (Url, error) {
 		}
 
 	})
-
+	wg.Wait()
 	result.H1Count = doc.Find("h1").Length()
 	result.H2Count = doc.Find("h2").Length()
 	result.H3Count = doc.Find("h3").Length()
@@ -150,9 +166,10 @@ func crawlURL(target string) (Url, error) {
 	result.H5Count = doc.Find("h5").Length()
 	result.H6Count = doc.Find("h6").Length()
 
+	result.BrokenLinks = brokenLinks
 	result.InternalLinks = internalCount
 	result.ExternalLinks = externalCount
-	result.BrokenLinks = brokenCount
+	result.BrokenLinksCount = len(brokenLinks)
 
 	result.LoginFormDetected = true
 
