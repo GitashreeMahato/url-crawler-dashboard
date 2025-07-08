@@ -17,8 +17,8 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       const response = await axios.post('http://localhost:8080/urls', {
         Url: url,
       });
-
-      setSuccess('URL submitted successfully.');
+      console.log('Response:', response.data);
+      setSuccess(`URL submitted successfully.`);
       setUrl('');
     } catch (err: any) {
       setError('Failed to submit URL.');
