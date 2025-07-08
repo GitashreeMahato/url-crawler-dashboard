@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"strings"
+
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gin-gonic/gin"
 )
@@ -87,6 +89,41 @@ func crawlURL(target string) (Url, error) {
 		}
 		return true
 	})
+	// Step: Analyze links
+	internalCount := 0
+	externalCount := 0
+	brokenCount := 0
+
+	doc.Find("a[href]").Each(func(i int, s *goquery.Selection) {
+		href, exists := s.Attr("href")
+		if !exists || href == "" || href == "#" {
+			return
+		}
+
+		// Normalize
+		href = strings.TrimSpace(href)
+
+		// Skip empty/malformed
+		if strings.HasPrefix(href, "javascript:") {
+			return
+		}
+
+		// Determine internal vs external
+		if strings.HasPrefix(href, "/") || strings.Contains(href, target) {
+			internalCount++
+		} else {
+			externalCount++
+		}
+
+		// Check if link is broken (HEAD is faster)
+		go func(link string) {
+			resp, err := http.Head(link)
+			if err != nil || resp.StatusCode >= 400 {
+				brokenCount++
+			}
+		}(href)
+	})
+
 	result.H1Count = doc.Find("h1").Length()
 	result.H2Count = doc.Find("h2").Length()
 	result.H3Count = doc.Find("h3").Length()
@@ -94,7 +131,17 @@ func crawlURL(target string) (Url, error) {
 	result.H5Count = doc.Find("h5").Length()
 	result.H6Count = doc.Find("h6").Length()
 
+	result.InternalLinks = internalCount
+	result.ExternalLinks = externalCount
+	result.BrokenLinks = brokenCount
+
+	fmt.Println("Link Analysis:")
+	fmt.Println("Internal Links:", result.InternalLinks)
+	fmt.Println("External Links:", result.ExternalLinks)
+	fmt.Println("Broken Links:", result.BrokenLinks)
+
 	return result, nil
+
 }
 
 // create urls
@@ -114,6 +161,21 @@ func CreateUrl(c *gin.Context) {
 		c.JSON(500, gin.H{"error": "Failed to save URL"})
 		return
 	}
+
+	// Run crawler in background
+	go func(id uint, target string) {
+		analyzed, err := crawlURL(target)
+		if err != nil {
+			fmt.Println("Crawl failed for:", target, err)
+			return
+		}
+		// Update DB with analyzed result
+		analyzed.ID = id
+		DB.Model(&Url{}).Where("id = ?", id).Updates(analyzed)
+
+		fmt.Println("Crawl complete for", target)
+		fmt.Println("Internal:", analyzed.InternalLinks, "External:", analyzed.ExternalLinks, "Broken:", analyzed.BrokenLinks)
+	}(newUrl.ID, newUrl.Url)
 
 	c.JSON(201, newUrl)
 }
