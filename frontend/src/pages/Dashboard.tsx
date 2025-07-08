@@ -1,8 +1,9 @@
-import React from "react";
-const DashBoard: React.FC = ()=>{
+import UrlForm from "../components/UrlForm";
+
+const DashBoard = ()=>{
     return(
         <>
-        <p>This is DashBoard page.</p>
+            <UrlForm/>
         </>
     )
 }
