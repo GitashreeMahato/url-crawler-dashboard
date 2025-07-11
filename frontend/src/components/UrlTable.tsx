@@ -115,12 +115,17 @@ const UrlTable = () => {
 
   // Fetch data from backend API
   useEffect(() => {
+    const fetchData =()=>{
     axios
       .get('http://localhost:8080/urls')
       .then((res) => setData(res.data))
       .catch(() => alert('Failed to load URLs'))
       .finally(() => setLoading(false));
-  }, []);
+  }; 
+  fetchData();
+  const interval = setInterval(fetchData, 5000);
+  return ()=> clearInterval(interval);
+}, []);
 
     // Define table columns with headers and optional custom rendering
   const columns = useMemo<ColumnDef<UrlItem>[]>(
